@@ -58,4 +58,3 @@ Capture screenshots for the report showing:
 ## License
 
 This project is available under the MIT License. See [LICENSE](LICENSE).
-
