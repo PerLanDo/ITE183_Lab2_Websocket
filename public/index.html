@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b2d">
+  <title>ITE183 WebSocket Chat</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b1220;
+      color: #edf3ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px;
+      background: radial-gradient(ellipse at 50% 0%, #183151 0, #0b1220 58%);
+    }
+    main { width: min(100%, 760px); }
+    .eyebrow { color: #75d5c4; font-size: .76rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 8px 0; font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: -.045em; }
+    .intro { margin: 0 0 24px; color: #aab8ce; line-height: 1.6; }
+    .panel { overflow: hidden; border: 1px solid #263750; border-radius: 18px; background: #111c2d; box-shadow: 0 24px 70px #0007; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 20px; border-bottom: 1px solid #263750; }
+    .panel-head h2 { margin: 0; font-size: 1rem; }
+    #status { display: inline-flex; align-items: center; gap: 8px; color: #e9c46a; font-size: .84rem; font-weight: 700; }
+    #status::before { width: 8px; height: 8px; border-radius: 50%; background: currentColor; content: ""; }
+    #status.connected { color: #75d5a4; }
+    #status.disconnected { color: #ff8585; }
+    #log { height: min(52vh, 390px); min-height: 250px; overflow-y: auto; padding: 14px 20px; }
+    .entry { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: #18263a; overflow-wrap: anywhere; line-height: 1.45; }
+    .entry.sent { border-left: 3px solid #66a8ff; }
+    .entry.received { border-left: 3px solid #75d5a4; }
+    .entry.system { color: #b9c6d9; font-size: .9rem; }
+    .controls { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid #263750; }
+    input { min-width: 0; flex: 1; padding: 12px 14px; border: 1px solid #344963; border-radius: 10px; outline: none; background: #0b1422; color: #edf3ff; font: inherit; }
+    input:focus { border-color: #75d5c4; box-shadow: 0 0 0 3px #75d5c422; }
+    button { padding: 0 20px; border: 0; border-radius: 10px; background: #75d5c4; color: #08201c; font: inherit; font-weight: 800; cursor: pointer; }
+    button:disabled, input:disabled { opacity: .5; cursor: not-allowed; }
+    footer { margin-top: 14px; color: #7789a4; font-size: .82rem; text-align: center; }
+    @media (max-width: 480px) { .controls { padding: 12px; } .panel-head { padding: 14px; } #log { padding: 12px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">ITE183 · Laboratory 2</div>
+    <h1>WebSocket Chat</h1>
+    <p class="intro">A live, full-duplex chat powered by a Bonezegei WebSocket server. Open this page in another window to test broadcasting.</p>
+    <section class="panel" aria-label="WebSocket chat">
+      <div class="panel-head">
+        <h2>Live conversation</h2>
+        <div id="status" role="status" aria-live="polite">Connecting</div>
+      </div>
+      <div id="log" aria-live="polite" aria-label="Chat messages"></div>
+      <form class="controls" id="chatForm">
+        <input id="msgInput" type="text" placeholder="Write a message..." autocomplete="off" disabled aria-label="Message">
+        <button id="sendBtn" type="submit" disabled>Send</button>
+      </form>
+    </section>
+    <footer>Server: <span id="serverAddress"></span></footer>
+  </main>
+  <script>
+    const wsUrl = `ws://${window.location.hostname || "localhost"}:8000`;
+    const socket = new WebSocket(wsUrl);
+    const statusDiv = document.getElementById("status");
+    const logDiv = document.getElementById("log");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+    document.getElementById("serverAddress").textContent = wsUrl;
+
+    function appendLog(text, className) {
+      const entry = document.createElement("div");
+      entry.className = `entry ${className}`;
+      entry.textContent = text;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    socket.addEventListener("open", () => {
+      statusDiv.textContent = "Connected";
+      statusDiv.className = "connected";
+      msgInput.disabled = false;
+      sendBtn.disabled = false;
+      msgInput.focus();
+      appendLog("Connected to the WebSocket server.", "system");
+    });
+
+    socket.addEventListener("message", (event) => appendLog(event.data, "received"));
+
+    socket.addEventListener("close", () => {
+      statusDiv.textContent = "Disconnected";
+      statusDiv.className = "disconnected";
+      msgInput.disabled = true;
+      sendBtn.disabled = true;
+      appendLog("Connection closed by the server.", "system");
+    });
+
+    socket.addEventListener("error", () => appendLog("A WebSocket error occurred.", "system"));
+
+    document.getElementById("chatForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const message = msgInput.value.trim();
+      if (message && socket.readyState === WebSocket.OPEN) {
+        socket.send(message);
+        appendLog(`You: ${message}`, "sent");
+        msgInput.value = "";
+        msgInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
+
