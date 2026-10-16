@@ -26,6 +26,8 @@ bzg run
 
 Use Bonezegei v1.3.3 as specified by the laboratory instructions. The `http` package files are generated under `lib/` by `bzg install` and are intentionally not committed.
 
+If `bzg run` prints usage information or the server reports that `run` is undefined, check `bonezegei -v` and install the required v1.3.3 runtime. Older builds may not provide the HTTP/WebSocket API used by this lab.
+
 Open [http://localhost:8000](http://localhost:8000). Keep the terminal running while testing. To test multiple clients, open that address in two or more browser windows, connect, and send a message from one window. Every connected window, including the sender, should show the broadcast with the sender's client ID. Close a window and check the server terminal for its disconnect event.
 
 Visit an unknown path such as [http://localhost:8000/not-found](http://localhost:8000/not-found) to see the custom 404 page.
@@ -35,6 +37,7 @@ Visit an unknown path such as [http://localhost:8000/not-found](http://localhost
 ```text
 .
 ├── .gitattributes
+├── .gitignore
 ├── LICENSE
 ├── README.md
 ├── app.bzg
