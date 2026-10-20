@@ -1,117 +1,292 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101b2d">
-  <title>ITE183 WebSocket Chat</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0b1220;
-      color: #edf3ff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      min-height: 100vh;
-      margin: 0;
-      display: grid;
-      place-items: center;
-      padding: 28px 16px;
-      background: radial-gradient(ellipse at 50% 0%, #183151 0, #0b1220 58%);
-    }
-    main { width: min(100%, 760px); }
-    .eyebrow { color: #75d5c4; font-size: .76rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
-    h1 { margin: 8px 0; font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: -.045em; }
-    .intro { margin: 0 0 24px; color: #aab8ce; line-height: 1.6; }
-    .panel { overflow: hidden; border: 1px solid #263750; border-radius: 18px; background: #111c2d; box-shadow: 0 24px 70px #0007; }
-    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 20px; border-bottom: 1px solid #263750; }
-    .panel-head h2 { margin: 0; font-size: 1rem; }
-    #status { display: inline-flex; align-items: center; gap: 8px; color: #e9c46a; font-size: .84rem; font-weight: 700; }
-    #status::before { width: 8px; height: 8px; border-radius: 50%; background: currentColor; content: ""; }
-    #status.connected { color: #75d5a4; }
-    #status.disconnected { color: #ff8585; }
-    #log { height: min(52vh, 390px); min-height: 250px; overflow-y: auto; padding: 14px 20px; }
-    .entry { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: #18263a; overflow-wrap: anywhere; line-height: 1.45; }
-    .entry.sent { border-left: 3px solid #66a8ff; }
-    .entry.received { border-left: 3px solid #75d5a4; }
-    .entry.system { color: #b9c6d9; font-size: .9rem; }
-    .controls { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid #263750; }
-    input { min-width: 0; flex: 1; padding: 12px 14px; border: 1px solid #344963; border-radius: 10px; outline: none; background: #0b1422; color: #edf3ff; font: inherit; }
-    input:focus { border-color: #75d5c4; box-shadow: 0 0 0 3px #75d5c422; }
-    button { padding: 0 20px; border: 0; border-radius: 10px; background: #75d5c4; color: #08201c; font: inherit; font-weight: 800; cursor: pointer; }
-    button:disabled, input:disabled { opacity: .5; cursor: not-allowed; }
-    footer { margin-top: 14px; color: #7789a4; font-size: .82rem; text-align: center; }
-    @media (max-width: 480px) { .controls { padding: 12px; } .panel-head { padding: 14px; } #log { padding: 12px; } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#e9edf5">
+<script>
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+  let savedTheme = null;
+  try { savedTheme = localStorage.getItem('relay-theme'); } catch {}
+  const initialTheme = savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : systemTheme.matches ? 'dark' : 'light';
+  document.documentElement.dataset.theme = initialTheme;
+  document.querySelector('meta[name="theme-color"]').content = initialTheme === 'dark' ? '#1e1f22' : '#e3e5e8';
+</script>
+<title>Relay — WebSocket Chat</title>
+<style>
+:root{font-family:"Segoe UI",Arial,sans-serif;font-synthesis:none;color-scheme:light;--rail:#e3e5e8;--side:#f2f3f5;--panel:#fff;--composer:#ebedef;--active:#dfe1e5;--line:#d8dadd;--text:#313338;--muted:#626773;--blue:#5865f2;--name:#343b70;background:var(--rail);color:var(--text)}
+:root[data-theme="dark"]{color-scheme:dark;--rail:#1e1f22;--side:#2b2d31;--panel:#313338;--composer:#383a40;--active:#404249;--line:#26272b;--text:#dbdee1;--muted:#a8adb7;--name:#b5baff}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:var(--rail)}button,input{font:inherit}button{cursor:pointer}button:focus-visible{outline:2px solid #8e97ff;outline-offset:3px}button:disabled{opacity:.45;cursor:not-allowed}svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}[hidden]{display:none!important}
+.window{height:100dvh;min-height:430px;display:grid;grid-template-rows:36px 1fr 26px;overflow:hidden}.titlebar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:var(--muted);background:var(--rail);user-select:none}.brand{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:750;letter-spacing:.2px}.brand-mark{color:#949cf7;display:grid;place-items:center}.brand-mark svg{width:17px;height:17px}.title-actions{display:flex;align-items:center;gap:16px}.title-meta{font-size:10px}.theme-toggle{display:flex;align-items:center;gap:6px;font-size:10px;padding:4px 8px;color:var(--muted);background:transparent;border:1px solid var(--active);border-radius:5px}.theme-toggle:hover{background:var(--active);color:var(--text)}.theme-toggle svg{width:13px;height:13px}.sun-icon{display:none}[data-theme="dark"] .sun-icon{display:block}[data-theme="dark"] .moon-icon{display:none}
+.workspace{display:grid;grid-template-columns:72px 240px minmax(0,1fr);min-height:0}.server-rail{display:flex;align-items:center;flex-direction:column;padding:14px 0;gap:12px;background:var(--rail)}.server-badge{width:48px;height:48px;display:grid;place-items:center;border-radius:16px;background:var(--blue);color:white;font-weight:750;font-size:17px;position:relative;box-shadow:0 3px 10px #0002}.server-badge:before{content:"";position:absolute;left:-12px;height:34px;width:4px;background:var(--text);border-radius:0 4px 4px 0}.rail-rule{width:30px;height:2px;background:var(--active)}.rail-caption{writing-mode:vertical-rl;font-size:10px;letter-spacing:2px;color:var(--muted);margin-top:8px}.sidebar{display:flex;flex-direction:column;min-height:0;gap:24px;background:var(--side);border-radius:9px 0 0 0;padding:0 10px 0}.workspace-name{margin:0 -10px;padding:18px 18px 17px;border-bottom:1px solid var(--line);box-shadow:0 1px 2px #0001}.workspace-name h1{margin:0;font-size:16px;font-weight:700;letter-spacing:-.2px}.workspace-name p{font-size:11px;color:var(--muted);margin:5px 0 0}.label{color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.8px;text-transform:uppercase;margin:0 8px 9px}.label:before{content:"⌄";margin-right:6px}.channel{display:flex;align-items:center;gap:9px;border-radius:5px;background:var(--active);padding:10px;color:var(--text)}.channel svg{color:var(--muted);width:21px;height:21px}.channel strong{font-size:14px;font-weight:600}.channel small{display:none}.dot{width:6px;height:6px;border-radius:50%;background:#b99a55;margin-left:auto}.sidebar-note{margin:auto 8px 0;padding:16px 0;color:var(--muted);border-top:1px solid var(--line)}.sidebar-note svg{color:#959dff;margin-bottom:9px}.sidebar-note strong{display:block;color:var(--text);font-size:12px}.sidebar-note p{font-size:12px;line-height:1.7;margin:8px 0 0}.profile{display:flex;gap:10px;align-items:center;padding:13px 12px;margin:0 -10px;background:var(--rail)}.avatar{display:grid;place-items:center;width:38px;height:38px;flex-shrink:0;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:650}.profile .avatar{position:relative}.profile .avatar:after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border:3px solid var(--rail);border-radius:50%;background:#23a55a}.profile strong{display:block;font-size:13px}.profile small{font-size:10px;color:var(--muted)}
+.conversation{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel);border-radius:0 9px 0 0}.conversation-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:77px;padding:15px 25px;border-bottom:1px solid var(--line);box-shadow:0 1px 2px #0001}.heading{display:flex;gap:12px;align-items:center;min-width:0}.room-icon{display:grid;place-items:center;color:var(--muted)}.room-icon svg{width:26px;height:26px}h2{font-size:16px;margin:0 0 4px;font-weight:700}.subtitle{font-size:12px;color:var(--muted);margin:0}.header-actions{display:flex;align-items:center;gap:16px}#status{display:flex;align-items:center;gap:6px;font-size:11px;color:#a8802a;white-space:nowrap}#status:before{content:"";width:7px;height:7px;background:currentColor;border-radius:50%}#status.connected{color:#24864b}#status.disconnected{color:#ca4248}[data-theme="dark"] #status.connected{color:#62d08b}[data-theme="dark"] #status.disconnected{color:#ff8c91}.icon-button{display:grid;place-items:center;background:transparent;color:var(--muted);border:0;border-radius:5px;width:30px;height:30px}.icon-button:hover{background:var(--active);color:var(--text)}.icon-button svg{width:19px;height:19px}
+#log{flex:1;min-height:0;overflow-y:auto;padding:28px 25px;scrollbar-width:thin;scrollbar-color:var(--rail) transparent}.date-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:10px;font-weight:600;margin-bottom:28px}.date-divider:before,.date-divider:after{content:"";height:1px;background:var(--active);flex:1}.welcome{padding:30px 0 26px;border-bottom:1px solid var(--line);margin-bottom:22px}.welcome-icon{width:72px;height:72px;background:var(--active);border-radius:50%;display:grid;place-items:center;margin-bottom:17px;color:var(--text)}.welcome-icon svg{width:40px;height:40px}.welcome h3{font-size:30px;letter-spacing:-.8px;margin:0 0 10px;font-weight:750}.welcome p{color:var(--muted);font-size:14px;line-height:1.7;margin:0}.entry{display:flex;gap:14px;padding:6px 0;margin:10px 0;animation:arrive .15s ease-out}.entry .avatar{margin-top:2px}.entry.sent .avatar{background:#8766c4}.message-content{min-width:0;max-width:calc(100% - 54px)}.message-meta{display:flex;align-items:baseline;gap:9px;margin-bottom:3px}.message-meta strong{color:var(--name);font-size:14px;font-weight:650}.message-meta time{font-size:10px;color:var(--muted)}.bubble{font-size:14px;line-height:1.65;overflow-wrap:anywhere;white-space:pre-wrap}.entry.system{display:block;color:var(--muted);font-size:11px;line-height:1.7;padding-left:52px}.entry.system:before{content:"→";color:#23a55a;margin-right:9px}.composer-area{padding:8px 25px 18px}.composer{display:flex;align-items:center;gap:12px;padding:9px 10px 9px 18px;border:1px solid transparent;background:var(--composer);border-radius:8px}.composer:focus-within{border-color:#7d87ee}input{flex:1;min-width:0;width:0;background:transparent;border:0;outline:0;padding:9px 0;color:var(--text);font-size:14px}input::placeholder{color:var(--muted)}#sendBtn{display:flex;gap:8px;align-items:center;padding:9px 14px;border:0;border-radius:5px;color:white;background:var(--blue);font-size:12px;font-weight:600}#sendBtn:hover:enabled{background:#4752c4}#sendBtn svg{width:16px;height:16px}.composer-hint{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted);margin-top:9px}kbd{font:inherit;font-weight:650}#reconnectBtn{border:0;background:transparent;color:var(--name);font-size:11px}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 16px;background:var(--rail);color:var(--muted);font-size:9px}.statusbar span{display:inline-flex;align-items:center;gap:6px}.statusbar svg{width:12px;height:12px}@keyframes arrive{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.entry{animation:none}}
+@media(min-width:1450px){.workspace{grid-template-columns:80px 260px minmax(0,1fr)}#log{padding-right:max(25px,8vw)}}
+@media(max-width:850px){.workspace{grid-template-columns:64px 190px minmax(0,1fr)}.server-badge{width:42px;height:42px}.server-badge:before{left:-11px}.conversation-header{padding:15px 18px}.subtitle{font-size:11px}.header-actions{gap:8px}#log{padding:24px 18px}.composer-area{padding:8px 18px 16px}.welcome h3{font-size:25px}}
+@media(max-width:620px){.workspace{grid-template-columns:1fr}.sidebar,.server-rail{display:none}.conversation{border-radius:0}.conversation-header{min-height:72px;padding:14px 16px}.subtitle{font-size:10px}.heading{gap:8px}.header-actions{gap:5px}.titlebar{padding:0 13px}.title-actions{gap:8px}.title-meta{font-size:9px}.theme-toggle{padding:4px}.theme-toggle span{display:none}#log{padding:22px 16px}.welcome h3{font-size:25px}.welcome p{font-size:13px}.composer-area{padding:8px 16px 14px}.composer{padding-left:12px;gap:8px}input{font-size:13px}.statusbar{font-size:8px;padding:0 12px}.entry{gap:10px}.entry .avatar{width:33px;height:33px}.message-content{max-width:calc(100% - 43px)}.entry.system{padding-left:43px}}
+/* Keep the conversation anchored to its composer, with readable desktop sizing. */
+.window{grid-template-rows:40px minmax(0,1fr) 28px}
+.workspace{grid-template-columns:68px 232px minmax(0,1fr)}
+.brand{font-size:13px}.title-meta,.theme-toggle{font-size:11px}
+.theme-toggle{min-height:28px}
+.rail-caption{display:none}
+.sidebar{gap:20px}
+.workspace-name{min-height:64px;padding:13px 18px}
+.workspace-name p{font-size:12px}
+.label{font-size:11px;letter-spacing:.5px}
+.channel{min-height:40px}.channel strong{font-size:15px}
+.sidebar-note{padding:15px 0;margin-bottom:0}
+.sidebar-note>svg{display:none}
+.sidebar-note strong{font-size:13px}
+.sidebar-note p{font-size:12px;line-height:1.6}
+.profile{min-height:64px}.profile strong{font-size:14px}.profile small{font-size:12px}
+.conversation-header{min-height:64px;padding:12px 24px}
+.heading>div{display:flex;align-items:center;gap:16px}
+h2{font-size:16px;margin:0}
+.subtitle{font-size:13px;border-left:1px solid var(--active);padding-left:16px}
+#status{font-size:12px}
+#log{display:flex;flex-direction:column;padding:24px 24px 12px;overflow-anchor:none}
+.log-content{margin-top:auto;flex:0 0 auto;min-width:0}
+.welcome{padding:12px 0 22px;margin:0;border:0}
+.welcome-icon{width:64px;height:64px;margin-bottom:16px}
+.welcome-icon svg{width:35px;height:35px}
+.welcome h3{font-size:30px;line-height:1.2;margin-bottom:10px}
+.welcome p{font-size:14px;line-height:1.65}
+.date-divider{font-size:11px;margin:8px 0 18px}
+.entry{gap:14px;margin:8px 0;padding:7px 0}
+.message-meta strong{font-size:15px}.message-meta time{font-size:11px}
+.bubble{font-size:15px;line-height:1.6}
+.entry.system{font-size:12px;margin:6px 0;padding-top:5px;padding-bottom:5px}
+.composer-area{padding:10px 24px 16px}
+.composer{min-height:54px;padding:6px 8px 6px 16px}
+input{font-size:15px}
+#sendBtn{min-height:38px;font-size:13px;padding:9px 16px}
+.composer-hint{font-size:11px;margin-top:8px}
+.statusbar{font-size:10px}
+@media(min-width:1450px){.workspace{grid-template-columns:72px 248px minmax(0,1fr)}}
+@media(max-width:950px){.workspace{grid-template-columns:64px 200px minmax(0,1fr)}.subtitle{display:none}.conversation-header{padding:12px 18px}#log{padding:20px 18px 10px}.composer-area{padding:10px 18px 14px}.welcome h3{font-size:27px}}
+@media(max-width:620px){.workspace{grid-template-columns:minmax(0,1fr)}.window{grid-template-rows:40px minmax(0,1fr) 26px;min-height:360px}.conversation-header{min-height:58px;padding:10px 16px}.title-meta{font-size:10px}.theme-toggle{min-width:28px}.welcome h3{font-size:25px}.welcome p{font-size:13px}.welcome-icon{width:56px;height:56px}#log{padding:16px 16px 8px}.composer-area{padding:8px 16px 12px}.composer-hint{font-size:10px}.composer-hint #deliveryHint{display:none}.statusbar{font-size:9px}.statusbar>span:last-child{display:none}.bubble{font-size:14px}.entry.system{padding-left:0}.message-meta{flex-wrap:wrap;gap:4px 8px}}
+@media(max-height:540px){.welcome{padding-top:4px}.welcome-icon{display:none}.welcome h3{font-size:23px}.sidebar-note{display:none}.profile{margin-top:auto}}
+.entry.sent{flex-direction:row-reverse}
+.entry.sent .message-content{display:flex;flex-direction:column;align-items:flex-end}
+.entry.sent .message-meta{justify-content:flex-end}
+.entry.sent .bubble{text-align:right}
+.avatar{overflow:hidden}.avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.profile{width:calc(100% + 20px);border:0;color:var(--text);text-align:left;cursor:pointer}
+.profile:hover{background:var(--active)}.profile>div{min-width:0;flex:1}.profile strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-edit-icon{width:17px;height:17px;color:var(--muted)}
+.profile-shortcut{display:grid;place-items:center;width:30px;height:30px;border:0;background:transparent;padding:0;border-radius:50%}.profile-shortcut:hover{outline:2px solid var(--blue)}.profile-shortcut .avatar{width:27px;height:27px}
+.profile-dialog{width:min(460px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;border:1px solid var(--active);border-radius:14px;background:var(--panel);color:var(--text);padding:28px;box-shadow:0 20px 80px #0006}
+.profile-dialog::backdrop{background:#111318b8;backdrop-filter:blur(5px)}
+.profile-dialog h2{font-size:24px;margin:0 0 7px}.profile-dialog p{font-size:13px;line-height:1.6;color:var(--muted);margin:0 0 22px}
+.profile-dialog label,.profile-dialog legend{font-size:12px;font-weight:650;margin-bottom:9px;display:block}
+.profile-dialog input{display:block;flex:none;width:100%;border:1px solid var(--active);border-radius:7px;padding:12px;background:var(--composer);font-size:15px;margin-bottom:22px}
+.profile-dialog input:focus{outline:2px solid var(--blue);outline-offset:1px}
+.profile-dialog fieldset{padding:0;border:0;margin:0 0 24px;min-width:0}
+.avatar-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.avatar-option{padding:5px 2px 7px;border:2px solid transparent;border-radius:10px;background:transparent;color:var(--muted);font-size:10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.avatar-option img{width:100%;height:auto;max-width:54px;aspect-ratio:1;border-radius:50%}.avatar-option:hover{background:var(--composer)}.avatar-option[aria-pressed="true"]{border-color:var(--blue);background:var(--composer);color:var(--text)}
+.profile-actions{display:flex;justify-content:flex-end;gap:10px}.profile-actions button{border:0;border-radius:6px;padding:10px 17px;font-size:13px;color:var(--text);background:var(--composer)}.profile-actions button[type="submit"]{background:#5865f2;color:white}
+@media(max-width:400px){.profile-dialog{padding:22px 18px}.avatar-options{gap:4px}}
+</style>
 </head>
 <body>
-  <main>
-    <div class="eyebrow">ITE183 · Laboratory 2</div>
-    <h1>WebSocket Chat</h1>
-    <p class="intro">A live, full-duplex chat powered by a Bonezegei WebSocket server. Open this page in another window to test broadcasting.</p>
-    <section class="panel" aria-label="WebSocket chat">
-      <div class="panel-head">
-        <h2>Live conversation</h2>
-        <div id="status" role="status" aria-live="polite">Connecting</div>
-      </div>
-      <div id="log" aria-live="polite" aria-label="Chat messages"></div>
-      <form class="controls" id="chatForm">
-        <input id="msgInput" type="text" placeholder="Write a message..." autocomplete="off" disabled aria-label="Message">
-        <button id="sendBtn" type="submit" disabled>Send</button>
-      </form>
-    </section>
-    <footer>Server: <span id="serverAddress"></span></footer>
-  </main>
-  <script>
-    const wsUrl = `ws://${window.location.hostname || "localhost"}:8000`;
-    const socket = new WebSocket(wsUrl);
-    const statusDiv = document.getElementById("status");
-    const logDiv = document.getElementById("log");
-    const msgInput = document.getElementById("msgInput");
-    const sendBtn = document.getElementById("sendBtn");
-    document.getElementById("serverAddress").textContent = wsUrl;
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-3 3V11.5A7.5 7.5 0 0 1 9.5 4h3a7.5 7.5 0 0 1 7.5 7.5Z"/><path d="M7 10h8M7 14h5"/></symbol>
+<symbol id="hash" viewBox="0 0 24 24"><path d="m10 3-4 18M18 3l-4 18M4 9h17M2 15h17"/></symbol>
+<symbol id="send" viewBox="0 0 24 24"><path d="m21 3-7 18-4-7-7-4L21 3ZM10 14 21 3"/></symbol>
+<symbol id="clear" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
+<symbol id="connection" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+</defs></svg>
+<main class="window" aria-label="Relay chat application">
+<header class="titlebar"><div class="brand"><span class="brand-mark"><svg aria-hidden="true"><use href="#chat"/></svg></span>Relay</div><div class="title-actions"><span class="title-meta">ITE183 &nbsp; / &nbsp; Laboratory 02</span><button class="theme-toggle" id="themeToggle" type="button" aria-label="Dark mode" aria-pressed="false" title="Switch to dark mode"><svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/></svg><svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg><span id="themeLabel">Dark mode</span></button></div></header>
+<div class="workspace">
+<aside class="server-rail" aria-label="Current server"><div class="server-badge" title="ITE183 Lab server" aria-label="ITE183 Lab server">R</div><div class="rail-rule"></div><span class="rail-caption">RELAY</span></aside>
+<aside class="sidebar" aria-label="Workspace">
+<div class="workspace-name"><h1>ITE183 Lab</h1><p>The class hangout</p></div>
+<div><div class="label">Text channels</div><div class="channel" aria-current="page"><svg aria-hidden="true"><use href="#hash"/></svg><div><strong>general</strong><small>Everyone is welcome</small></div><span class="dot" id="channelDot"></span></div></div>
+<div class="sidebar-note"><strong>Bring the conversation to life</strong><p>Open another window and say hello. Everyone in #general will see your message.</p></div>
+<button class="profile" id="editProfile" type="button" aria-label="Edit your profile"><span class="avatar" id="profileAvatar"></span><div><strong id="profileName">You</strong><small>Edit your profile</small></div><svg class="profile-edit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15v5Z"/></svg></button>
+</aside>
+<section class="conversation" aria-label="General conversation">
+<header class="conversation-header"><div class="heading"><span class="room-icon"><svg aria-hidden="true"><use href="#hash"/></svg></span><div><h2>general</h2><p class="subtitle">The class conversation</p></div></div><div class="header-actions"><span id="status" role="status">Connecting</span><button class="icon-button" id="clearBtn" type="button" title="Clear messages in this window" aria-label="Clear messages in this window"><svg aria-hidden="true"><use href="#clear"/></svg></button></div></header>
+<div id="log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Chat messages"><div class="log-content"><div class="welcome" id="welcome"><div class="welcome-icon"><svg aria-hidden="true"><use href="#hash"/></svg></div><h3>Welcome to #general!</h3><p>This is the beginning of the #general channel.<br>Say hello to everyone in the lab.</p></div><div class="date-divider" id="dateLabel">Today</div><div id="messages"></div></div></div>
+<div class="composer-area"><form class="composer" id="chatForm"><input id="msgInput" type="text" placeholder="Message #general" autocomplete="off" disabled aria-label="Message General"><button id="sendBtn" type="submit" disabled>Send<svg aria-hidden="true"><use href="#send"/></svg></button></form><div class="composer-hint"><span>Press <kbd>Enter</kbd> to send</span><span id="deliveryHint">Connecting to your conversation...</span><button id="reconnectBtn" type="button" hidden>Reconnect</button></div></div>
+</section>
+</div>
+<footer class="statusbar"><span><svg aria-hidden="true"><use href="#connection"/></svg><span id="serverAddress"></span></span><span>Powered by Bonezegei &nbsp; · &nbsp; WebSocket</span></footer>
+</main>
+<dialog class="profile-dialog" id="profileDialog" aria-labelledby="profileTitle" aria-describedby="profileDescription">
+  <form id="profileForm">
+    <h2 id="profileTitle">Make yourself at home.</h2>
+    <p id="profileDescription">Choose how you appear in #general. Your own messages will still say “You”.</p>
+    <label for="displayName">Display name</label>
+    <input id="displayName" name="displayName" maxlength="32" placeholder="Your name" autocomplete="nickname">
+    <fieldset><legend>Choose your avatar</legend><div class="avatar-options" id="avatarOptions"></div></fieldset>
+    <div class="profile-actions"><button type="button" id="cancelProfile">Cancel</button><button type="submit">Save profile</button></div>
+  </form>
+</dialog>
+<script>
+// Original, self-contained vector avatars: no downloads or external requests.
+const avatarArt = [
+  ['Orbit', '#b9b5ff', '<path d="M32 21v-7m-4 0h8" stroke="#454184" stroke-width="3"/><rect x="15" y="22" width="34" height="29" rx="11" fill="#f0efff"/><rect x="21" y="28" width="22" height="12" rx="5" fill="#454184"/><circle cx="27" cy="34" r="2" fill="#87e2e5"/><circle cx="37" cy="34" r="2" fill="#87e2e5"/><path d="M27 45h10" stroke="#847bd2" stroke-width="3" stroke-linecap="round"/>'],
+  ['Ember', '#ffc597', '<path d="m13 18 17 9h4l17-9-4 28-15 11-15-11Z" fill="#df7043"/><path d="m18 24 10 6-12 4Zm28 0-10 6 12 4Z" fill="#733f47"/><path d="m17 38 15 5 15-5-4 10-11 8-11-8Z" fill="#fff2dd"/><circle cx="24" cy="36" r="2" fill="#432e3c"/><circle cx="40" cy="36" r="2" fill="#432e3c"/><path d="m28 44 4 4 4-4Z" fill="#432e3c"/>'],
+  ['Luna', '#f4b9d7', '<path d="m15 32 1-17 15 9h2l15-9 1 17v10c0 17-34 17-34 0Z" fill="#625584"/><path d="m20 22 6 5-6 3Zm24 0-6 5 6 3Z" fill="#e9a6cf"/><path d="M23 38h3m12 0h3" stroke="#fff0fb" stroke-width="3" stroke-linecap="round"/><path d="m29 43 3 3 3-3" fill="#f4b9d7"/><path d="M32 46v3m-11-4-9-2m9 6-8 1m30-5 9-2m-9 6 8 1" stroke="#e4c9ef" stroke-width="1.5"/>'],
+  ['Nova', '#a8d9f7', '<rect x="17" y="43" width="30" height="18" rx="8" fill="#e5f3ff"/><circle cx="32" cy="30" r="21" fill="#f4f8ff"/><rect x="15" y="18" width="34" height="25" rx="12" fill="#304f81"/><path d="M22 25c2-3 6-4 10-4" stroke="#a6e5ff" stroke-width="3" stroke-linecap="round"/><path d="m41 27 1.5 3L46 31l-3.5 1-1.5 3-1-3-3-1 3-1Z" fill="#ffe9a3"/><path d="M27 54h10" stroke="#efaa6c" stroke-width="3"/>'],
+  ['Sprout', '#b9e6bd', '<circle cx="23" cy="25" r="10" fill="#529b72"/><circle cx="41" cy="25" r="10" fill="#529b72"/><ellipse cx="32" cy="39" rx="23" ry="18" fill="#6aad7e"/><circle cx="23" cy="25" r="5" fill="#fff8dd"/><circle cx="41" cy="25" r="5" fill="#fff8dd"/><circle cx="24" cy="26" r="2.5" fill="#294d45"/><circle cx="40" cy="26" r="2.5" fill="#294d45"/><path d="M24 42q8 7 16 0" fill="none" stroke="#294d45" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="18" cy="39" rx="4" ry="2" fill="#e9ae9b"/><ellipse cx="46" cy="39" rx="4" ry="2" fill="#e9ae9b"/>']
+];
+const avatars = avatarArt.map(([name, background, art]) => ({ name, src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="${background}"/>${art}</svg>`) }));
+let profile = { name: '', avatar: 0 };
+try {
+  const saved = JSON.parse(localStorage.getItem('relay-profile'));
+  if (saved && typeof saved.name === 'string' && Number.isInteger(saved.avatar) && avatars[saved.avatar]) profile = { name: saved.name.trim().slice(0, 32), avatar: saved.avatar };
+} catch {}
+let selectedAvatar = profile.avatar;
+const profileDialog = document.getElementById('profileDialog');
+const displayName = document.getElementById('displayName');
+function avatarImage(index) {
+  const img = document.createElement('img');
+  img.src = avatars[index].src; img.alt = avatars[index].name; img.width = 64; img.height = 64;
+  return img;
+}
+const profileShortcut = document.createElement('button');
+profileShortcut.type = 'button'; profileShortcut.className = 'profile-shortcut'; profileShortcut.setAttribute('aria-label', 'Edit your profile');
+profileShortcut.appendChild(Object.assign(document.createElement('span'), { className: 'avatar' }));
+document.querySelector('.title-actions').appendChild(profileShortcut);
+function updateProfile() {
+  document.getElementById('profileName').textContent = profile.name || 'You';
+  document.getElementById('profileAvatar').replaceChildren(avatarImage(profile.avatar));
+  profileShortcut.firstChild.replaceChildren(avatarImage(profile.avatar));
+}
+function selectAvatar(index) {
+  selectedAvatar = index;
+  document.querySelectorAll('.avatar-option').forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
+}
+avatars.forEach((avatar, index) => {
+  const button = document.createElement('button');
+  button.type = 'button'; button.className = 'avatar-option'; button.setAttribute('aria-label', avatar.name);
+  button.append(avatarImage(index), Object.assign(document.createElement('span'), { textContent: avatar.name }));
+  button.addEventListener('click', () => selectAvatar(index));
+  document.getElementById('avatarOptions').appendChild(button);
+});
+function openProfile() {
+  displayName.value = profile.name; selectAvatar(profile.avatar); profileDialog.showModal(); displayName.focus();
+}
+document.getElementById('editProfile').addEventListener('click', openProfile);
+profileShortcut.addEventListener('click', openProfile);
+document.getElementById('cancelProfile').addEventListener('click', () => profileDialog.close());
+document.getElementById('profileForm').addEventListener('submit', event => {
+  event.preventDefault(); profile = { name: displayName.value.trim().slice(0, 32), avatar: selectedAvatar };
+  try { localStorage.setItem('relay-profile', JSON.stringify(profile)); } catch {}
+  updateProfile(); profileDialog.close();
+});
+updateProfile();
+const themeToggle = document.getElementById('themeToggle');
+function applyTheme(theme) {
+  const dark = theme === 'dark';
+  document.documentElement.dataset.theme = theme;
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#1e1f22' : '#e3e5e8';
+  themeToggle.setAttribute('aria-pressed', String(dark));
+  themeToggle.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  document.getElementById('themeLabel').textContent = dark ? 'Light mode' : 'Dark mode';
+}
+applyTheme(initialTheme);
+themeToggle.addEventListener('click', () => {
+  savedTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(savedTheme);
+  try { localStorage.setItem('relay-theme', savedTheme); } catch {}
+});
+systemTheme.addEventListener('change', event => {
+  if (savedTheme !== 'light' && savedTheme !== 'dark') applyTheme(event.matches ? 'dark' : 'light');
+});
+const wsUrl = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host || 'localhost:8000'}`;
+const statusDiv = document.getElementById('status');
+const logDiv = document.getElementById('log');
+const messages = document.getElementById('messages');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const reconnectBtn = document.getElementById('reconnectBtn');
+const deliveryHint = document.getElementById('deliveryHint');
+const welcome = document.getElementById('welcome');
+let socket;
+let localClientId = null;
 
-    function appendLog(text, className) {
-      const entry = document.createElement("div");
-      entry.className = `entry ${className}`;
-      entry.textContent = text;
-      logDiv.appendChild(entry);
-      logDiv.scrollTop = logDiv.scrollHeight;
+document.getElementById('serverAddress').textContent = wsUrl;
+document.getElementById('dateLabel').textContent = `Today, ${new Date().toLocaleDateString(undefined, {month:'long', day:'numeric'})}`;
+function appendLog(text, kind, author = 'Server', avatarIndex = null) {
+  const entry = document.createElement('div');
+  entry.className = `entry ${kind}`;
+  if (kind === 'system') { entry.textContent = text; }
+  else {
+    {
+      const avatar = document.createElement('span');
+      avatar.className = 'avatar';
+      if (Number.isInteger(avatarIndex) && avatars[avatarIndex]) avatar.appendChild(avatarImage(avatarIndex));
+      else avatar.textContent = author === 'You' ? 'YO' : author === 'Server' ? 'RE' : author.replace('User ', '');
+      entry.appendChild(avatar);
     }
-
-    socket.addEventListener("open", () => {
-      statusDiv.textContent = "Connected";
-      statusDiv.className = "connected";
-      msgInput.disabled = false;
-      sendBtn.disabled = false;
+    const content = document.createElement('div'); content.className = 'message-content';
+    const meta = document.createElement('div'); meta.className = 'message-meta';
+    const name = document.createElement('strong'); name.textContent = author;
+    const time = document.createElement('time'); const now = new Date();
+    time.dateTime = now.toISOString(); time.textContent = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    meta.append(name, time);
+    const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.textContent = text;
+    content.append(meta, bubble); entry.appendChild(content);
+  }
+  messages.appendChild(entry); logDiv.scrollTop = logDiv.scrollHeight;
+}
+function setConnection(state) {
+  const connected = state === 'connected';
+  statusDiv.textContent = connected ? 'Connected' : state === 'connecting' ? 'Connecting' : 'Disconnected';
+  statusDiv.className = state; msgInput.disabled = !connected; sendBtn.disabled = !connected;
+  reconnectBtn.hidden = state !== 'disconnected'; deliveryHint.hidden = state === 'disconnected';
+  deliveryHint.textContent = connected ? 'Visible to everyone in General' : 'Connecting to your conversation...';
+  document.getElementById('channelDot').style.background = connected ? '#3b996b' : '#b99a55';
+}
+function connect() {
+  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+  localClientId = null;
+  setConnection('connecting'); socket = new WebSocket(wsUrl);
+  socket.addEventListener('message', event => {
+    const text = String(event.data);
+    const session = text.match(/^Session client ID: (\d+)$/);
+    if (session) {
+      localClientId = session[1];
+      setConnection('connected');
       msgInput.focus();
-      appendLog("Connected to the WebSocket server.", "system");
-    });
-
-    socket.addEventListener("message", (event) => appendLog(event.data, "received"));
-
-    socket.addEventListener("close", () => {
-      statusDiv.textContent = "Disconnected";
-      statusDiv.className = "disconnected";
-      msgInput.disabled = true;
-      sendBtn.disabled = true;
-      appendLog("Connection closed by the server.", "system");
-    });
-
-    socket.addEventListener("error", () => appendLog("A WebSocket error occurred.", "system"));
-
-    document.getElementById("chatForm").addEventListener("submit", (event) => {
-      event.preventDefault();
-      const message = msgInput.value.trim();
-      if (message && socket.readyState === WebSocket.OPEN) {
-        socket.send(message);
-        appendLog(`You: ${message}`, "sent");
-        msgInput.value = "";
-        msgInput.focus();
-      }
-    });
-  </script>
+      return;
+    }
+    const broadcast = text.match(/^User (\d+) says: ([\s\S]*)$/);
+    if (broadcast) {
+      const own = broadcast[1] === localClientId;
+      let message = broadcast[2];
+      let author = `User ${broadcast[1]}`;
+      let avatarIndex = Number(broadcast[1]) % avatars.length;
+      try {
+        const payload = JSON.parse(message);
+        if (payload && payload.type === 'relay-chat-v1' && typeof payload.text === 'string' && typeof payload.name === 'string' && Number.isInteger(payload.avatar) && avatars[payload.avatar]) {
+          message = payload.text;
+          author = payload.name.trim().slice(0, 32) || author;
+          avatarIndex = payload.avatar;
+        }
+      } catch {}
+      appendLog(message, own ? 'sent' : 'received', own ? 'You' : author, avatarIndex);
+    } else if (!/^Welcome to.*WebSocket server!$/i.test(text)) appendLog(text, 'system');
+  });
+  socket.addEventListener('close', () => { setConnection('disconnected'); appendLog('Connection closed. Reconnect to keep the conversation going.', 'system'); });
+  socket.addEventListener('error', () => appendLog("Couldn't reach the server. Check that it's running and try reconnecting.", 'system'));
+}
+document.getElementById('chatForm').addEventListener('submit', event => {
+  event.preventDefault(); const message = msgInput.value.trim();
+  if (message && socket && socket.readyState === WebSocket.OPEN) {
+    // The server broadcasts to the sender too; render that broadcast once.
+    socket.send(JSON.stringify({ type: 'relay-chat-v1', name: profile.name, avatar: profile.avatar, text: message })); msgInput.value = ''; msgInput.focus();
+  }
+});
+reconnectBtn.addEventListener('click', connect);
+document.getElementById('clearBtn').addEventListener('click', () => { messages.replaceChildren(); welcome.hidden = false; appendLog('Messages cleared in this window.', 'system'); });
+connect();
+</script>
 </body>
 </html>

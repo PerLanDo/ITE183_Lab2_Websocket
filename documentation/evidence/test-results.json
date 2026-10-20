@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-17",
+  "version": "1.3.3",
+  "url": "http://localhost:8000",
+  "clientIds": [
+    "0",
+    "1"
+  ],
+  "messagesPerClient": 2,
+  "tests": {
+    "broadcast": true,
+    "noDuplicates": true,
+    "senderLabelYou": true,
+    "remoteNames": true,
+    "avatars": true,
+    "theme": true,
+    "profilePersistence": true,
+    "mobileNoOverflow": true,
+    "custom404Page": true,
+    "reconnect": true
+  },
+  "unknownRouteHttpStatus": 200,
+  "pageErrors": []
+}

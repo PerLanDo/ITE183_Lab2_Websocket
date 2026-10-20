@@ -3,23 +3,65 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>404 - Page Not Found</title>
+  <meta name="theme-color" content="#e3e5e8">
+  <title>Page not found — Relay</title>
+  <script>
+    const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem('relay-theme'); } catch {}
+    document.documentElement.dataset.theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : systemTheme.matches ? 'dark' : 'light';
+  </script>
   <style>
-    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #edf3ff; background: #0b1220; }
-    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; }
-    main { max-width: 520px; padding: 42px; border: 1px solid #263750; border-radius: 18px; background: #111c2d; text-align: center; box-shadow: 0 24px 70px #0007; }
-    .code { color: #75d5c4; font-size: .8rem; font-weight: 800; letter-spacing: .2em; }
-    h1 { margin: 10px 0; font-size: 2.5rem; }
-    p { color: #aab8ce; line-height: 1.6; }
-    a { display: inline-block; margin-top: 12px; padding: 11px 18px; border-radius: 9px; background: #75d5c4; color: #08201c; font-weight: 800; text-decoration: none; }
+    :root{font-family:"Segoe UI",Arial,sans-serif;font-synthesis:none;color-scheme:light;--rail:#e3e5e8;--side:#f2f3f5;--panel:#fff;--active:#dfe1e5;--line:#d8dadd;--text:#313338;--muted:#626773;--accent:#5865f2;color:var(--text);background:var(--rail)}
+    :root[data-theme="dark"]{color-scheme:dark;--rail:#1e1f22;--side:#2b2d31;--panel:#313338;--active:#404249;--line:#26272b;--text:#dbdee1;--muted:#a8adb7}
+    *{box-sizing:border-box}body{margin:0}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer}a{color:inherit;text-decoration:none}a:focus-visible,button:focus-visible{outline:2px solid #8e97ff;outline-offset:4px}svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .app{height:100dvh;min-height:450px;display:grid;grid-template-rows:40px minmax(0,1fr) 28px}.titlebar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 18px;color:var(--muted)}.brand{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:750}.brand svg{width:17px;height:17px;color:#949cf7}.title-actions{display:flex;align-items:center;gap:16px}.title-meta{font-size:11px}.theme-toggle{display:flex;align-items:center;gap:6px;min-height:28px;font-size:11px;padding:4px 8px;border:1px solid var(--active);border-radius:5px;color:var(--muted);background:transparent}.theme-toggle:hover{color:var(--text);background:var(--active)}.theme-toggle svg{width:13px;height:13px}.sun-icon{display:none}[data-theme="dark"] .sun-icon{display:block}[data-theme="dark"] .moon-icon{display:none}
+    .workspace{display:grid;grid-template-columns:68px 232px minmax(0,1fr);min-height:0}.rail{display:flex;align-items:center;flex-direction:column;padding:14px 0;gap:12px}.server-badge{width:48px;height:48px;display:grid;place-items:center;position:relative;border-radius:16px;background:var(--accent);color:white;font-size:17px;font-weight:750}.server-badge:before{content:"";position:absolute;left:-10px;width:4px;height:34px;border-radius:0 4px 4px 0;background:var(--text)}.rail-rule{width:30px;height:2px;background:var(--active)}
+    .sidebar{display:flex;flex-direction:column;gap:20px;padding:0 10px;background:var(--side);border-radius:9px 0 0 0}.workspace-name{min-height:64px;margin:0 -10px;padding:13px 18px;border-bottom:1px solid var(--line)}.workspace-name strong{font-size:16px}.workspace-name p{font-size:12px;color:var(--muted);margin:5px 0 0}.label{font-size:11px;font-weight:750;letter-spacing:.5px;color:var(--muted);margin:0 8px 9px}.channel{display:flex;align-items:center;gap:9px;min-height:40px;padding:10px;border-radius:5px;font-size:15px;font-weight:600;color:var(--muted)}.channel:hover{background:var(--active);color:var(--text)}.sidebar-note{margin:auto 8px 20px;padding-top:15px;border-top:1px solid var(--line)}.sidebar-note strong{font-size:13px}.sidebar-note p{font-size:12px;line-height:1.6;color:var(--muted);margin:8px 0 0}
+    .content{display:flex;flex-direction:column;min-height:0;background:var(--panel);border-radius:0 9px 0 0}.channel-header{display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 24px;border-bottom:1px solid var(--line)}.channel-header svg{color:var(--muted);width:26px;height:26px}.channel-header strong{font-size:16px}.channel-header span{font-size:13px;color:var(--muted);border-left:1px solid var(--active);padding-left:16px;margin-left:4px}
+    main{flex:1;min-height:0;overflow:auto;display:grid;place-items:center;padding:32px 24px}.error-content{max-width:460px;text-align:center}.error-art{position:relative;width:160px;height:122px;margin:0 auto 20px;display:grid;place-items:center}.error-art:before{content:"";position:absolute;inset:10px 24px;background:#5865f217;border:1px solid #5865f233;border-radius:30px;transform:rotate(-10deg)}.error-art svg{position:relative;width:67px;height:67px;color:#8992ff}.error-badge{position:absolute;bottom:5px;right:20px;background:var(--accent);color:#fff;border:5px solid var(--panel);border-radius:12px;padding:5px 9px;font-size:15px;font-weight:750;letter-spacing:1px}.eyebrow{font-size:11px;letter-spacing:1.8px;font-weight:700;color:var(--muted);margin:0 0 12px}h1{font-size:clamp(28px,4vw,38px);line-height:1.15;letter-spacing:-1px;margin:0 0 14px}.description{font-size:14px;line-height:1.8;color:var(--muted);margin:0}.route{display:block;max-width:100%;margin:20px 0 24px;padding:10px 14px;border:1px solid var(--active);border-radius:6px;background:var(--side);font-family:Consolas,monospace;font-size:12px;color:var(--muted);overflow-wrap:anywhere}.return-link{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 20px;background:var(--accent);color:#fff;border-radius:6px;font-size:14px;font-weight:600}.return-link:hover{background:#4752c4}.return-link svg{width:17px;height:17px}.helper{color:var(--muted);font-size:12px;margin:18px 0 0}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 16px;color:var(--muted);font-size:10px}
+    @media(max-width:950px){.workspace{grid-template-columns:64px 200px minmax(0,1fr)}.server-badge{width:42px;height:42px}.server-badge:before{left:-11px}.channel-header span{display:none}}
+    @media(max-width:620px){.workspace{grid-template-columns:minmax(0,1fr)}.rail,.sidebar{display:none}.content{border-radius:0}.titlebar{padding:0 13px}.title-actions{gap:8px}.title-meta{font-size:10px}.theme-toggle{min-width:28px;padding:4px}.theme-toggle span{display:none}.channel-header{min-height:58px;padding:10px 16px}main{padding:24px 20px}.statusbar{font-size:9px;padding:0 12px}.statusbar span:last-child{display:none}.error-art{height:105px;margin-bottom:16px}}
+    @media(max-height:600px){.error-art{display:none}main{padding:20px}.sidebar-note{display:none}.route{margin:14px 0 18px}h1{font-size:28px}}
   </style>
 </head>
 <body>
-  <main>
-    <div class="code">HTTP ERROR 404</div>
-    <h1>Page not found</h1>
-    <p>The requested page is not available on this server.</p>
-    <a href="/">Return to chat</a>
-  </main>
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-3 3V11.5A7.5 7.5 0 0 1 9.5 4h3a7.5 7.5 0 0 1 7.5 7.5Z"/><path d="M7 10h8M7 14h5"/></symbol>
+    <symbol id="hash" viewBox="0 0 24 24"><path d="m10 3-4 18M18 3l-4 18M4 9h17M2 15h17"/></symbol>
+  </defs></svg>
+  <div class="app">
+    <header class="titlebar"><a class="brand" href="/" aria-label="Relay home"><svg aria-hidden="true"><use href="#chat"/></svg>Relay</a><div class="title-actions"><span class="title-meta">ITE183 &nbsp; / &nbsp; Laboratory 02</span><button class="theme-toggle" id="themeToggle" type="button" aria-label="Dark mode" aria-pressed="false"><svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/></svg><svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg><span id="themeLabel">Dark mode</span></button></div></header>
+    <div class="workspace">
+      <aside class="rail" aria-label="Server"><a class="server-badge" href="/" aria-label="Return to ITE183 Lab">R</a><div class="rail-rule"></div></aside>
+      <aside class="sidebar" aria-label="Workspace"><div class="workspace-name"><strong>ITE183 Lab</strong><p>The class hangout</p></div><div><div class="label">⌄ TEXT CHANNELS</div><a class="channel" href="/"><svg aria-hidden="true"><use href="#hash"/></svg>general</a></div><div class="sidebar-note"><strong>Your conversation is still there</strong><p>Head back to #general to reconnect with everyone in the lab.</p></div></aside>
+      <section class="content" aria-label="Missing page"><header class="channel-header"><svg aria-hidden="true"><use href="#hash"/></svg><strong>unknown-channel</strong><span>This page could not be found</span></header>
+        <main><div class="error-content"><div class="error-art" aria-hidden="true"><svg><use href="#hash"/></svg><span class="error-badge">404</span></div><p class="eyebrow">YOU TOOK A DIFFERENT TURN</p><h1>Page not found</h1><p class="description">This page isn't part of the workspace.<br>Let's get you back to the conversation.</p><code class="route" id="missingPath">Unknown page</code><a class="return-link" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6-6 6 6 6M4 12h16"/></svg>Return to chat</a><p class="helper">Your saved name, avatar, and theme are still yours.</p></div></main>
+      </section>
+    </div>
+    <footer class="statusbar"><span>Relay &nbsp; / &nbsp; Page not found</span><span>Powered by Bonezegei &nbsp; · &nbsp; WebSocket</span></footer>
+  </div>
+  <script>
+    const toggle = document.getElementById('themeToggle');
+    function applyTheme(theme) {
+      const dark = theme === 'dark';
+      document.documentElement.dataset.theme = theme;
+      document.querySelector('meta[name="theme-color"]').content = dark ? '#1e1f22' : '#e3e5e8';
+      toggle.setAttribute('aria-pressed', String(dark));
+      toggle.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+      document.getElementById('themeLabel').textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    applyTheme(document.documentElement.dataset.theme);
+    toggle.addEventListener('click', () => {
+      savedTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(savedTheme);
+      try { localStorage.setItem('relay-theme', savedTheme); } catch {}
+    });
+    systemTheme.addEventListener('change', event => {
+      if (savedTheme !== 'light' && savedTheme !== 'dark') applyTheme(event.matches ? 'dark' : 'light');
+    });
+    // Keep the untrusted URL as text, including paths containing markup.
+    document.getElementById('missingPath').textContent = location.pathname;
+  </script>
 </body>
 </html>

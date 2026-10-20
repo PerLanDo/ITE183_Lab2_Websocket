@@ -1,0 +1,16 @@
+﻿Running 1 script(s) concurrently...
+[bzg run] Starting 'start': bonezegei app.bzg
+HTTP GET: /
+WebSocket connected! Client ID: 0
+HTTP GET: /favicon.ico
+HTTP GET: /
+WebSocket disconnected! Client ID: 0
+WebSocket connected! Client ID: 0
+HTTP GET: /favicon.ico
+HTTP GET: /
+WebSocket connected! Client ID: 1
+HTTP GET: /favicon.ico
+Received from Client 0: {"type":"relay-chat-v1","name":"Ember","avatar":1,"text":"Hi! IΓÇÖm online. Can you see my message?"}
+Received from Client 1: {"type":"relay-chat-v1","name":"Sprout","avatar":4,"text":"Yes, it came through clearly on my screen."}
+Received from Client 0: {"type":"relay-chat-v1","name":"Ember","avatar":1,"text":"Great! LetΓÇÖs check if it broadcasts to everyone."}
+Received from Client 1: {"type":"relay-chat-v1","name":"Sprout","avatar":4,"text":"Sure, send it over."}

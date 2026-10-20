@@ -20,7 +20,7 @@ On Windows, install or update Bonezegei through Microsoft Store. On Linux, downl
 From the project directory, install the HTTP package used by `app.bzg` and then start the server:
 
 ```sh
-bzg install http
+bzg install
 bzg run
 ```
 
@@ -28,9 +28,23 @@ Use Bonezegei v1.3.3 as specified by the laboratory instructions. The `http` pac
 
 If `bzg run` prints usage information or the server reports that `run` is undefined, check `bonezegei -v` and install the required v1.3.3 runtime. Older builds may not provide the HTTP/WebSocket API used by this lab.
 
-Open [http://localhost:8000](http://localhost:8000). Keep the terminal running while testing. To test multiple clients, open that address in two or more browser windows, connect, and send a message from one window. Every connected window, including the sender, should show the broadcast with the sender's client ID. Close a window and check the server terminal for its disconnect event.
+Open [http://localhost:8000](http://localhost:8000). Keep the terminal running while testing. To test multiple clients, open that address in two or more browser windows, connect, and send a message from one window. Each broadcast appears once in every connected window. Your messages show **You** on the right; other clients see your display name on the left. Close a window and check the server terminal for its disconnect event.
 
-Visit an unknown path such as [http://localhost:8000/not-found](http://localhost:8000/not-found) to see the custom 404 page.
+Click the profile in the sidebar or the avatar in the top bar to change your display name and choose one of five avatars: Orbit, Ember, Luna, Nova, or Sprout. Profile and light/dark theme preferences are saved in browser local storage. Set different names in the two test windows before sending messages. Changes apply to future messages; profiles are not authenticated accounts. Reconnect and clear-local-messages controls are also available.
+
+Visit an unknown path such as [http://localhost:8000/bksdjfs](http://localhost:8000/bksdjfs) to see the custom 404 page.
+
+Unknown routes return the custom page with HTTP status `404 Not Found`. Chat history is not stored on the server and clears on reload.
+
+## Laboratory report and captured evidence
+
+The [Word report](documentation/ITE183_Lab2_WebSocket_Report.docx) contains the implementation explanation, verification evidence, test results, and limitations. The report includes Perlan Jubay as the student name. Complete the section and instructor fields before submission.
+
+- [Evidence images](documentation/screenshots/) show the v1.3.3 version, dependency installation, server startup, custom 404 page, and a combined two-client chat capture. The chat capture shows Ember and Sprout exchanging four messages in both browser windows.
+- [Evidence files](documentation/evidence/) include command output and browser test results matching the verified Ember and Sprout session.
+- Public repository: [PerLanDo/ITE183_Lab2_Websocket](https://github.com/PerLanDo/ITE183_Lab2_Websocket).
+
+Commit and push the current source and documentation before submitting the repository link.
 
 ## Project files
 
@@ -42,6 +56,10 @@ Visit an unknown path such as [http://localhost:8000/not-found](http://localhost
 ├── README.md
 ├── app.bzg
 ├── package.json
+├── documentation/
+    ├── ITE183_Lab2_WebSocket_Report.docx
+    ├── evidence/
+    └── screenshots/
 └── public/
     ├── 404.html
     └── index.html
@@ -49,14 +67,15 @@ Visit an unknown path such as [http://localhost:8000/not-found](http://localhost
 
 `app.bzg` logs HTTP requests, WebSocket connections, received messages, and disconnects. `public/index.html` is the browser chat client, and `public/404.html` is shown for non-root HTTP paths. The `.gitattributes` file asks GitHub Linguist to highlight `.bzg` files as JavaScript.
 
-## Laboratory evidence
+## Included laboratory evidence
 
-Capture screenshots for the report showing:
+The `documentation/screenshots/` folder contains:
 
-1. `bonezegei -v` reporting version 1.3.3.
-2. Successful `bzg install` and the server running with `bzg run`.
-3. Two browser windows connected, with a message broadcast visible in both.
-4. The custom page displayed after visiting an unknown route.
+1. `01-version.png` — `bonezegei -v` reporting version 1.3.3.
+2. `02-install.png` — successful `bzg install` of the HTTP dependency.
+3. `03-server-startup.png` — server startup output and event logs showing connections, routes, and message exchange between Ember and Sprout.
+4. `04-custom-404.png` — the custom page displayed for an unknown route.
+5. `05-Chat.png` — both connected browser clients showing the same four-message exchange.
 
 ## License
 

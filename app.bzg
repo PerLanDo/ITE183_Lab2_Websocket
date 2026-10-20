@@ -9,13 +9,14 @@ server.get = function (path, data) {
     if (path == "/") {
         server.sendFile("public/index.html");
     } else {
-        server.sendFile("public/404.html");
+        server.sendResponse(readFile("public/404.html"), "text/html", 404);
     }
 };
 
 // Welcome each client after its WebSocket handshake completes.
 server.onConnect = function (clientId) {
     print("WebSocket connected! Client ID: " + clientId);
+    server.send(clientId, "Session client ID: " + clientId);
     server.send(clientId, "Welcome to the WebSocket server!");
 };
 
